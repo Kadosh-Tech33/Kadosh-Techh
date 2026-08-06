@@ -1,0 +1,886 @@
+/* ═══════════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --blue:        #2563eb;
+  --blue-dark:   #1d4ed8;
+  --blue-light:  rgba(37,99,235,0.10);
+  --blue-glow:   rgba(37,99,235,0.32);
+  --text:        #1e293b;
+  --text-muted:  #64748b;
+  --border:      #e2e8f0;
+  --white:       #ffffff;
+  --bg:          #f8faff;
+  --navy-deep:   #0b1220;
+  --navy-mid:    #0f1a2e;
+  --glass-bg:    rgba(255,255,255,0.60);
+  --glass-blur:  blur(15px);
+  --font-display:'Bebas Neue', sans-serif;
+  --font-body:   'Manrope', sans-serif;
+}
+
+html, body {
+  width:100%; min-height:100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: none;
+  scroll-behavior: smooth;
+}
+
+#root { position: relative; width: 100%; min-height: 100%; }
+
+/* ═══════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════ */
+#cursor-dot, #cursor-ring {
+  position: fixed; top:0; left:0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: opacity 0.3s;
+}
+#cursor-dot  { width:6px; height:6px; background:var(--blue); }
+#cursor-ring {
+  width:36px; height:36px;
+  border: 1.5px solid rgba(37,99,235,0.55);
+  background: rgba(37,99,235,0.07);
+  transition:
+    width .25s cubic-bezier(.16,1,.3,1),
+    height .25s cubic-bezier(.16,1,.3,1),
+    background .25s, border-color .25s;
+}
+#cursor-ring.big {
+  width:60px; height:60px;
+  background: rgba(37,99,235,0.13);
+  border-color: rgba(37,99,235,0.85);
+}
+
+/* ═══════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════ */
+nav {
+  position: absolute; top:20px; left:50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: min(960px, calc(100% - 40px));
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 13px 28px;
+  /* Nav only ever sits over the dark Hero (it scrolls away with the page
+     long before any light section reaches the top) — navy glass, not the
+     light glass built for the old all-light layout. */
+  background: rgba(11,18,32,0.55);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.06) inset;
+  opacity:0;
+  animation: slideDown .7s .2s cubic-bezier(.16,1,.3,1) forwards;
+}
+.nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.nav-logo-icon {
+  width:32px; height:32px; background:var(--blue);
+  border-radius:8px; display:grid; place-items:center;
+}
+.nav-logo-icon svg { width:18px; height:18px; fill:none; stroke:white; stroke-width:2.2; stroke-linecap:round; }
+.nav-logo-text { font-family:var(--font-display); font-size:1.35rem; letter-spacing:.1em; color:var(--white); }
+.nav-logo-text span { color:#60a5fa; }
+.nav-links { display:flex; gap:8px; list-style:none; }
+
+/* FlowingMenu-style link: a solid fill wipes in from the edge closest to
+   the cursor (see Nav.jsx) and swaps the label to a contrasting color —
+   adapted from React Bits' full-screen FlowingMenu down to header scale. */
+.nav-flow-link {
+  position: relative; display: inline-block; overflow: hidden;
+  padding: 7px 16px; border-radius: 8px;
+  text-decoration: none; cursor: none;
+}
+.nav-flow-label {
+  position: relative; z-index: 1; display: block;
+  color: rgba(255,255,255,.62);
+  font-size: .83rem; font-weight: 500; letter-spacing: .02em;
+}
+.nav-flow-fill {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--blue);
+  /* Resting position is set by GSAP on mount (see Nav.jsx) — not here. */
+  will-change: transform;
+  pointer-events: none;
+}
+.nav-flow-fill-label {
+  color: white; font-size: .83rem; font-weight: 600; letter-spacing: .02em;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-flow-link:hover .nav-flow-label { color: #93c5fd; }
+  .nav-flow-fill { display: none; }
+}
+.nav-cta {
+  padding:9px 22px; background:var(--blue); color:white;
+  border:none; border-radius:9px; font-family:var(--font-body);
+  font-size:.82rem; font-weight:600; letter-spacing:.03em; cursor:none;
+  transition: transform .18s, box-shadow .18s;
+  box-shadow: 0 4px 16px var(--blue-glow);
+}
+.nav-cta:hover { transform:translateY(-1px); box-shadow:0 8px 28px var(--blue-glow); }
+
+/* ═══════════════════════════════════════════
+   HERO (dark/navy — hosts the Hyperspeed canvas)
+═══════════════════════════════════════════ */
+.hero {
+  position:relative; z-index:10; overflow:hidden;
+  min-height:100vh;
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; text-align:center;
+  padding:120px 24px 80px; gap:0;
+}
+.hero--dark {
+  background: var(--navy-deep);
+  color: var(--white);
+}
+.hero-canvas-wrap {
+  position:absolute; inset:0; z-index:0;
+}
+.hero-static-bg {
+  position:absolute; inset:0;
+  background: radial-gradient(120% 100% at 50% 30%, var(--navy-mid) 0%, var(--navy-deep) 65%);
+}
+.hero-content {
+  position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center;
+}
+.hero-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 18px; background:rgba(37,99,235,.16);
+  border:1px solid rgba(37,99,235,.35); border-radius:999px;
+  font-size:.72rem; font-weight:600; letter-spacing:.16em;
+  text-transform:uppercase; color:#93c5fd; margin-bottom:28px;
+  /* Static pre-JS state only — no CSS animation. GSAP (Hero.jsx) drives the
+     entrance via inline styles instead of a `@keyframes ... forwards`
+     animation: ScrollTrigger.refresh() reparents the pinned .hero into/out
+     of its pin-spacer wrapper (on mount, on font/window load, and again
+     once the preloader hands off), and a CSS keyframe animation restarts
+     from 0% every time its target is reparented — that was the cause of
+     the title flashing back to invisible after already fading in. Inline
+     styles GSAP sets aren't affected by reparenting, so they stay put. */
+  opacity:0;
+}
+.hero-badge-dot {
+  width:6px; height:6px; background:var(--blue);
+  border-radius:50%; animation:blink 2.2s ease-in-out infinite;
+}
+.hero-title {
+  font-family:var(--font-display);
+  font-size:clamp(3.2rem,9.5vw,9rem);
+  line-height:.93; letter-spacing:.02em; color:var(--white);
+  max-width:1000px; margin-bottom:10px;
+  opacity:0;
+}
+.hero-title .blue-word {
+  color:#60a5fa; position:relative; display:inline-block;
+}
+.hero-title .blue-word-underline {
+  position:absolute; bottom:4px; left:0; right:0;
+  height:4px; background:var(--blue); border-radius:2px;
+  transform:scaleX(0); transform-origin:left center;
+}
+.hero-sub {
+  font-size:clamp(.9rem,1.4vw,1.1rem); font-weight:400;
+  line-height:1.75; color:rgba(255,255,255,.65); max-width:480px;
+  margin-top:24px; margin-bottom:40px;
+  opacity:0;
+}
+.hero-actions {
+  display:flex; align-items:center; gap:14px;
+  flex-wrap:wrap; justify-content:center;
+  opacity:0;
+}
+.btn-primary {
+  padding:14px 36px; background:var(--blue); color:white;
+  border:none; border-radius:10px; font-family:var(--font-body);
+  font-size:.92rem; font-weight:600; letter-spacing:.03em; cursor:none;
+  box-shadow:0 6px 24px var(--blue-glow);
+  transition: transform .2s, box-shadow .2s;
+}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 12px 36px rgba(37,99,235,.5); }
+.btn-ghost {
+  padding:14px 36px; background:transparent; color:var(--white);
+  border:1px solid rgba(255,255,255,.28); border-radius:10px;
+  font-family:var(--font-body); font-size:.92rem; font-weight:500;
+  cursor:none; transition: border-color .2s, background .2s, color .2s;
+}
+.btn-ghost:hover { border-color:var(--blue); color:#93c5fd; background:rgba(37,99,235,.14); }
+.scroll-cue {
+  position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+  z-index:2;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  color:rgba(255,255,255,.55); font-size:.65rem; letter-spacing:.14em;
+  text-transform:uppercase; font-weight:500;
+  opacity:0; animation:fadeUp .8s 1.5s cubic-bezier(.16,1,.3,1) forwards;
+}
+.scroll-track { width:1px; height:36px; background:rgba(255,255,255,.2); position:relative; overflow:hidden; border-radius:1px; }
+.scroll-thumb {
+  position:absolute; top:0; left:0; right:0; height:50%;
+  background:var(--blue); border-radius:1px;
+  animation:scrollThumb 1.8s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
+   STATS BRIDGE
+═══════════════════════════════════════════ */
+/* Transparent — continues the same shared .global-snow backdrop as every
+   section after it, so the particle field never cuts here either. */
+.stats-bridge { background:transparent; padding:64px 24px; position:relative; z-index:12; }
+.stats-bridge-inner {
+  max-width:720px; margin:0 auto;
+  display:flex; justify-content:center; gap:64px;
+}
+.stat-item { text-align:center; }
+.stat-num { font-family:var(--font-display); font-size:2.6rem; letter-spacing:.04em; color:var(--white); line-height:1; }
+.stat-num span { color:#93c5fd; }
+.stat-label { font-size:.72rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-top:6px; }
+@media(max-width:600px){ .stats-bridge-inner{ gap:32px; flex-wrap:wrap; } }
+
+/* ═══════════════════════════════════════════
+   SECTION SHARED
+═══════════════════════════════════════════ */
+.section-fade-in { position:relative; z-index:10; }
+.hero-bleed {
+  height:120px;
+  /* Fades into navy, not var(--bg) — Stats (and everything after it) now
+     sits transparent over the same navy/particle backdrop as the Hero, so
+     ending this gradient on the old light color would leave a pale seam
+     right at the Hero→Stats join. */
+  background:linear-gradient(to bottom,transparent,var(--navy-deep));
+  margin-top:-120px; position:relative; z-index:11; pointer-events:none;
+}
+.section-inner { max-width:1080px; margin:0 auto; }
+.section-label {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:.7rem; font-weight:600; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--blue); margin-bottom:14px;
+}
+.section-label::before {
+  content:''; display:block; width:24px; height:1.5px;
+  background:var(--blue); border-radius:1px;
+}
+.section-title {
+  font-family:var(--font-display);
+  font-size:clamp(2.4rem,5vw,4.5rem);
+  color:var(--text); line-height:1; letter-spacing:.02em; margin-bottom:56px;
+}
+.section-title em { font-style:normal; color:var(--blue); }
+
+/* DepthText accent word — used in place of the plain <em> highlight on the
+   Sobre / Contato titles. Overrides its default tight letter-spacing so it
+   tracks with the rest of our display font instead of looking like a
+   different typeface. */
+.kadosh-depth-word { vertical-align: baseline; }
+.kadosh-depth-word .depth-text__layer,
+.kadosh-depth-word .depth-text__face {
+  letter-spacing: .02em;
+}
+
+/* ═══════════════════════════════════════════
+   SERVIÇOS — pinned horizontal scroll
+═══════════════════════════════════════════ */
+.servicos-pin {
+  /* Transparent on purpose — continues the same shared .global-snow
+     backdrop as Work/Sobre/Contato, so the particle field never cuts
+     between sections. */
+  background:transparent; color:var(--white); position:relative; z-index:12;
+  height:100vh; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:center;
+  gap:40px;
+}
+.servicos-heading { padding:0 24px; max-width:1080px; margin:0 auto; width:100%; }
+.servicos-heading .section-title { color:var(--white); }
+.servicos-heading .section-title em { color:#60a5fa; }
+.servicos-heading .section-label { color:#93c5fd; }
+.servicos-heading .section-label::before { background:#93c5fd; }
+.servicos-track {
+  display:flex; gap:24px;
+  padding:0 24px; width:max-content;
+}
+
+/* No JS pin/horizontal-tween runs under reduced motion (see Servicos.jsx) —
+   fall back to a normal-flow section with a natively scrollable row so the
+   cards past the first one stay reachable instead of clipped by overflow. */
+@media (prefers-reduced-motion: reduce) {
+  .servicos-pin { height:auto; overflow:visible; padding:100px 0 60px; }
+  .servicos-track { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:24px; }
+}
+.service-card {
+  background:rgba(255,255,255,.06);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:18px; padding:32px; position:relative;
+  overflow:hidden; cursor:none;
+  width:min(78vw, 380px); flex-shrink:0;
+  transition: box-shadow .3s, border-color .3s;
+  transform-style:preserve-3d; will-change:transform;
+}
+.service-card::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(600px circle at var(--mx,50%) var(--my,50%),rgba(37,99,235,.18),transparent 60%);
+  opacity:0; transition:opacity .4s; pointer-events:none; border-radius:inherit;
+}
+.service-card:hover { box-shadow:0 16px 48px rgba(0,0,0,.4); border-color:rgba(37,99,235,.35); }
+.service-card:hover::before { opacity:1; }
+.card-icon {
+  width:44px; height:44px; background:rgba(37,99,235,.22);
+  border-radius:12px; display:grid; place-items:center; margin-bottom:20px;
+  transition: background .3s, transform .3s;
+}
+.service-card:hover .card-icon { background:var(--blue); transform:scale(1.08) rotate(-4deg); }
+.card-icon svg { width:22px; height:22px; stroke:#93c5fd; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s; }
+.service-card:hover .card-icon svg { stroke:white; }
+.card-tag { font-size:.67rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:#93c5fd; margin-bottom:8px; display:block; }
+.card-name { font-family:var(--font-display); font-size:1.5rem; letter-spacing:.03em; color:var(--white); line-height:1.1; margin-bottom:12px; min-height:2.2em; }
+.card-desc { font-size:.84rem; line-height:1.7; color:rgba(255,255,255,.65); }
+.corner-glow {
+  position:absolute; top:-40px; right:-40px;
+  width:120px; height:120px;
+  background:radial-gradient(circle,rgba(37,99,235,.15),transparent 70%);
+  pointer-events:none; opacity:0; transition:opacity .4s;
+}
+.service-card:hover .corner-glow { opacity:1; }
+
+@media(max-width:600px){
+  .service-card { width:80vw; padding:26px; }
+}
+
+/* ═══════════════════════════════════════════
+   WORK / TRABALHOS — dark, pinned horizontal scroll
+   (transparent background: sits over the global snow/navy backdrop)
+═══════════════════════════════════════════ */
+.work-pin {
+  position: relative; z-index: 12;
+  height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 40px;
+  background: transparent; color: var(--white);
+}
+.work-stack {
+  position: relative; z-index: 12;
+  padding: 100px 24px 80px;
+  background: transparent; color: var(--white);
+}
+.work-heading { padding: 0 24px; max-width: 1080px; margin: 0 auto; width: 100%; }
+.work-stack .work-heading { padding: 0; margin: 0 auto 40px; }
+.work-heading .section-title, .work-heading .section-label { color: var(--white); }
+.work-heading .section-title em { color: #60a5fa; }
+.work-heading .section-label { color: #93c5fd; }
+.work-heading .section-label::before { background: #93c5fd; }
+
+.work-track {
+  display: flex; gap: 24px;
+  padding: 0 24px; width: max-content;
+}
+.work-stack .work-track {
+  flex-direction: column; width: 100%; max-width: 640px; margin: 0 auto; padding: 0 24px;
+}
+
+.work-item {
+  display: flex; flex-direction: column;
+  width: min(78vw, 380px); flex-shrink: 0;
+  text-decoration: none; cursor: none;
+}
+.work-stack .work-item { width: 100%; }
+
+.work-item-media {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  will-change: transform;
+}
+.project-img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
+  transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s;
+  pointer-events: none;
+}
+.work-item:hover .project-img {
+  transform: scale(1.06);
+  box-shadow: 0 20px 48px rgba(0,0,0,.45);
+}
+.work-item-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, rgba(11,18,32,0) 45%, rgba(11,18,32,.65) 100%);
+  opacity: 0; transition: opacity .3s;
+}
+.work-item-overlay svg {
+  width: 34px; height: 34px; stroke: white; fill: none; stroke-width: 1.8;
+  opacity: 0; transform: scale(.7);
+  transition: opacity .3s .05s, transform .3s .05s;
+}
+.work-item:hover .work-item-overlay { opacity: 1; }
+.work-item:hover .work-item-overlay svg { opacity: 1; transform: scale(1); }
+
+.work-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--white);
+  letter-spacing: .03em;
+  transition: color .2s;
+  padding: 0 2px;
+}
+.work-item:hover .work-title { color: #93c5fd; }
+
+.work-title::after {
+  content: ' →';
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  display: inline-block;
+  transform: translateX(-6px);
+  font-size: 1.1rem;
+  color: #93c5fd;
+}
+.work-item:hover .work-title::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ═══════════════════════════════════════════
+   SOBRE / ABOUT
+═══════════════════════════════════════════ */
+#sobre {
+  /* Transparent on purpose — sits over the shared .global-snow layer
+     (same navy backdrop as Work/Contato), so the particle background
+     reads as one continuous field instead of cutting at each section. */
+  background: transparent; color: var(--white); padding:100px 24px;
+  position:relative; z-index:12;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.sobre-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:80px; align-items:center;
+}
+@media(max-width:760px){ .sobre-grid{ grid-template-columns:1fr; gap:48px; } }
+
+.sobre-visual {
+  position:relative; display:flex;
+  align-items:center; justify-content:center;
+}
+.sobre-blob {
+  width:340px; height:380px; border-radius:40% 60% 55% 45% / 45% 40% 60% 55%;
+  background:radial-gradient(circle, rgba(37,99,235,.32) 0%, rgba(37,99,235,.08) 100%);
+  display:flex; align-items:center; justify-content:center;
+  animation:morphBlob 8s ease-in-out infinite;
+  position:relative;
+}
+.sobre-blob-inner {
+  width:220px; height:220px; border-radius:50%;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dark) 100%);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 20px 60px rgba(37,99,235,.45);
+}
+.sobre-blob-inner svg { width:80px; height:80px; fill:none; stroke:white; stroke-width:1.4; stroke-linecap:round; }
+.sobre-badge-float {
+  position:absolute; background:rgba(255,255,255,.08);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px; padding:10px 16px; box-shadow:0 8px 24px rgba(0,0,0,.3);
+  display:flex; align-items:center; gap:10px; white-space:nowrap;
+}
+.sobre-badge-float.b1 { top:24px; right:-20px; animation:floatY 3s ease-in-out infinite; }
+.sobre-badge-float.b2 { bottom:32px; left:-20px; animation:floatY 3s 1.5s ease-in-out infinite; }
+.sbf-icon { width:32px; height:32px; background:rgba(37,99,235,.25); border-radius:8px; display:grid; place-items:center; flex-shrink:0; }
+.sbf-icon svg { width:16px; height:16px; stroke:#93c5fd; fill:none; stroke-width:2; stroke-linecap:round; }
+.sbf-label { font-size:.65rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.5); }
+.sbf-value { font-family:var(--font-display); font-size:1.1rem; color:var(--white); letter-spacing:.04em; line-height:1; }
+
+.sobre-content .section-label { margin-bottom:14px; color:#93c5fd; }
+.sobre-content .section-label::before { background:#93c5fd; }
+.sobre-content .section-title { margin-bottom:24px; color:var(--white); }
+.sobre-content .section-title em { color:#60a5fa; }
+.sobre-lead {
+  font-size:1rem; line-height:1.8; color:rgba(255,255,255,.65);
+  margin-bottom:20px; font-weight:400;
+}
+.sobre-lead strong { color:var(--white); font-weight:600; }
+.sobre-skills {
+  display:flex; flex-wrap:wrap; gap:8px; margin-top:32px; margin-bottom:40px;
+}
+.skill-tag {
+  padding:6px 16px; border:1px solid var(--border); border-radius:999px;
+  font-size:.75rem; font-weight:500; color:var(--text-muted);
+  letter-spacing:.04em; transition: border-color .2s, color .2s, background .2s;
+  cursor:none;
+}
+.skill-tag:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
+.sobre-cta {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:14px 30px; background:var(--blue); color:white;
+  border:none; border-radius:10px; font-family:var(--font-body);
+  font-size:.9rem; font-weight:600; cursor:none; text-decoration:none;
+  box-shadow:0 6px 24px var(--blue-glow);
+  transition: transform .2s, box-shadow .2s;
+}
+.sobre-cta:hover { transform:translateY(-2px); box-shadow:0 12px 36px rgba(37,99,235,.45); }
+.sobre-cta svg { width:18px; height:18px; stroke:white; fill:none; stroke-width:2; stroke-linecap:round; transition:transform .2s; }
+.sobre-cta:hover svg { transform:translateX(4px); }
+
+/* ═══════════════════════════════════════════
+   CONTATO
+═══════════════════════════════════════════ */
+#contato {
+  /* Transparent on purpose — the shared .global-snow layer behind it
+     (same animated navy gradient, now global instead of per-section)
+     shows through. Keeps Work and Contato visually on one continuous
+     dark backdrop instead of two separate navy fills. */
+  background: transparent;
+  padding: 100px 24px 120px;
+  position: relative; z-index: 12;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.contato-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 80px; align-items: start;
+}
+@media(max-width:760px){ .contato-grid{ grid-template-columns:1fr; gap:52px; } }
+
+.contato-impact {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5.5vw, 5rem);
+  line-height: .92; letter-spacing: .02em;
+  color: var(--white); margin-bottom: 28px;
+}
+.contato-impact em { font-style:normal; color:#60a5fa; }
+
+.contato-desc {
+  font-size: .95rem; line-height: 1.8;
+  color: rgba(255,255,255,.62); margin-bottom: 48px;
+  max-width: 320px;
+}
+
+.contato-bare { display:flex; flex-direction:column; gap:22px; }
+
+.ci-bare {
+  display: flex; align-items: center; gap: 14px;
+  cursor: none;
+}
+.ci-bare-icon {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.ci-bare-icon svg {
+  width: 18px; height: 18px;
+  stroke: #93c5fd; fill: none;
+  stroke-width: 1.7; stroke-linecap: round;
+  opacity: .7; transition: opacity .2s;
+}
+.ci-bare:hover .ci-bare-icon svg { opacity: 1; }
+.ci-bare-label {
+  font-size: .62rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.45); line-height: 1;
+}
+.ci-bare-value {
+  font-size: .88rem; font-weight: 500;
+  color: var(--white); margin-top: 3px;
+  transition: color .2s;
+}
+.ci-bare:hover .ci-bare-value { color: #93c5fd; }
+
+.contato-form-wrap {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  padding: 44px 40px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.2);
+}
+.contato-form-wrap::before {
+  content:''; position:absolute;
+  top:-60px; right:-60px;
+  width:220px; height:220px;
+  background: radial-gradient(circle, rgba(37,99,235,0.08), transparent 70%);
+  pointer-events: none;
+}
+.contato-form-wrap::after {
+  content:''; position:absolute;
+  bottom:-40px; left:-40px;
+  width:160px; height:160px;
+  background: radial-gradient(circle, rgba(37,99,235,0.05), transparent 70%);
+  pointer-events: none;
+}
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:0 32px; }
+@media(max-width:500px){ .form-row{ grid-template-columns:1fr; } }
+
+.form-group {
+  display: flex; flex-direction: column-reverse;
+  margin-bottom: 28px; position: relative;
+}
+.form-group label {
+  font-size: .65rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  transition: color .25s;
+  margin-bottom: 4px;
+  display: block;
+}
+.form-group input:focus ~ label,
+.form-group textarea:focus ~ label,
+.form-group select:focus ~ label { color: #93c5fd; }
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px 0 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid rgba(255,255,255,.22);
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: .92rem; color: var(--white);
+  outline: none; resize: none;
+  cursor: none;
+  transition: border-color .3s;
+  position: relative; z-index: 1;
+  -webkit-appearance: none; appearance: none;
+}
+.form-group input::placeholder,
+.form-group textarea::placeholder { color: rgba(255,255,255,.32); }
+.form-group textarea { min-height: 100px; }
+
+.form-group::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0;
+  width: 0; height: 1.5px;
+  background: var(--blue);
+  transition: width .35s cubic-bezier(.16,1,.3,1);
+  z-index: 2;
+}
+.form-group:focus-within::after { width: 100%; }
+.form-group:focus-within input,
+.form-group:focus-within textarea,
+.form-group:focus-within select { border-color: transparent; }
+
+.form-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23cbd5e1' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 24px;
+  cursor: none;
+}
+
+/* Custom "Serviço" dropdown — replaces the native <select>, whose option
+   list can't be themed cross-browser. */
+.form-group:focus-within .fselect-btn { border-color: transparent; }
+.fselect { position: relative; z-index: 1; }
+.fselect-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 10px 0; background: transparent; border: none;
+  border-bottom: 1.5px solid rgba(255,255,255,.22);
+  font-family: var(--font-body); font-size: .92rem; color: var(--white);
+  outline: none; cursor: none; text-align: left;
+}
+.fselect-placeholder { color: rgba(255,255,255,.32); }
+.fselect-chevron {
+  width: 12px; height: 8px; flex-shrink: 0;
+  stroke: #cbd5e1; fill: none; stroke-width: 1.5; stroke-linecap: round;
+  transition: transform .25s;
+}
+.fselect[data-open="true"] .fselect-chevron { transform: rotate(180deg); }
+
+.fselect-list {
+  position: fixed;
+  list-style: none;
+  background: var(--navy-mid);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 20px 48px rgba(0,0,0,.5);
+  z-index: 500;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.fselect-option {
+  padding: 10px 12px; border-radius: 8px;
+  font-size: .85rem; color: rgba(255,255,255,.82);
+  cursor: none; transition: background .15s, color .15s;
+  outline: none;
+}
+.fselect-option.active { background: rgba(37,99,235,.32); color: var(--white); }
+.fselect-option.selected { color: #93c5fd; font-weight: 600; }
+
+.form-submit {
+  width: 100%; padding: 16px;
+  background: var(--blue); color: white;
+  border: none; border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: .95rem; font-weight: 600; letter-spacing: .06em;
+  cursor: none; margin-top: 8px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 6px 28px rgba(37,99,235,.32);
+  transition: transform .2s, box-shadow .2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.form-submit::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(
+    circle at var(--bx,50%) var(--by,50%),
+    rgba(255,255,255,0.30) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.form-submit:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,0.16),
+    0 14px 40px rgba(37,99,235,.50);
+}
+.form-submit:hover::after { opacity: 1; }
+.form-submit svg {
+  width: 18px; height: 18px; stroke: white;
+  fill: none; stroke-width: 2; stroke-linecap: round;
+  transition: transform .2s;
+}
+.form-submit:hover svg { transform: translateX(4px); }
+
+.form-success { display:none; text-align:center; padding:48px 20px; }
+.form-success.show { display:flex; flex-direction:column; align-items:center; gap:16px; }
+.fs-icon {
+  width: 64px; height: 64px;
+  background: var(--blue-light); border-radius: 50%;
+  display: grid; place-items: center;
+}
+.fs-icon svg { width:28px; height:28px; stroke:var(--blue); fill:none; stroke-width:2; stroke-linecap:round; }
+.fs-title { font-family:var(--font-display); font-size:2.2rem; color:var(--white); letter-spacing:.04em; }
+.fs-desc { font-size:.88rem; color:rgba(255,255,255,.6); line-height:1.6; }
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+footer {
+  background:var(--text); color:rgba(255,255,255,.6);
+  padding:64px 24px 32px;
+  position:relative; z-index:12;
+}
+.footer-inner { max-width:1080px; margin:0 auto; }
+.footer-top {
+  display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr;
+  gap:48px; padding-bottom:48px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  margin-bottom:32px;
+}
+@media(max-width:760px){ .footer-top{ grid-template-columns:1fr 1fr; gap:32px; } }
+@media(max-width:480px){ .footer-top{ grid-template-columns:1fr; } }
+
+.footer-brand .nav-logo-text { color:white; font-size:1.5rem; }
+.footer-brand .nav-logo-text span { color:var(--blue); }
+.footer-tagline { font-size:.82rem; line-height:1.7; margin-top:12px; max-width:240px; }
+.footer-socials { display:flex; gap:10px; margin-top:20px; }
+.social-btn {
+  width:36px; height:36px; border-radius:9px;
+  border:1px solid rgba(255,255,255,.12);
+  display:grid; place-items:center; cursor:none;
+  transition: border-color .2s, background .2s;
+}
+.social-btn:hover { border-color:var(--blue); background:rgba(37,99,235,.15); }
+.social-btn svg { width:16px; height:16px; stroke:rgba(255,255,255,.6); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+.footer-col h4 {
+  font-family:var(--font-display); font-size:1rem; color:white;
+  letter-spacing:.1em; margin-bottom:16px;
+}
+.footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.footer-col a {
+  font-size:.82rem; color:rgba(255,255,255,.5);
+  text-decoration:none; transition:color .18s; cursor:none;
+}
+.footer-col a:hover { color:white; }
+
+.footer-bottom {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px;
+}
+.footer-copy { font-size:.75rem; }
+.footer-copy span { color:var(--blue); }
+.footer-back {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:.75rem; color:rgba(255,255,255,.5);
+  text-decoration:none; cursor:none;
+  transition:color .18s;
+}
+.footer-back:hover { color:white; }
+.footer-back svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; }
+
+/* ═══════════════════════════════════════════
+   SCROLL REVEAL
+═══════════════════════════════════════════ */
+.reveal {
+  opacity:0; transform:translateY(36px);
+  transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-delay-1 { transition-delay:.10s; }
+.reveal-delay-2 { transition-delay:.18s; }
+.reveal-delay-3 { transition-delay:.26s; }
+.reveal-delay-4 { transition-delay:.34s; }
+.reveal-delay-5 { transition-delay:.42s; }
+.reveal-delay-6 { transition-delay:.50s; }
+
+/* ═══════════════════════════════════════════
+   KEYFRAMES
+═══════════════════════════════════════════ */
+@keyframes slideDown {
+  from{ opacity:0; transform:translateX(-50%) translateY(-16px); }
+  to  { opacity:1; transform:translateX(-50%) translateY(0); }
+}
+@keyframes fadeUp {
+  from{ opacity:0; transform:translateY(28px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+@keyframes blink {
+  0%,100%{ opacity:1; }
+  50%    { opacity:.3; }
+}
+@keyframes underlineIn { to{ transform:scaleX(1); } }
+@keyframes scrollThumb {
+  0%  { transform:translateY(-100%); opacity:0; }
+  20% { opacity:1; }
+  80% { opacity:1; }
+  100%{ transform:translateY(200%); opacity:0; }
+}
+@keyframes morphBlob {
+  0%,100%{ border-radius:40% 60% 55% 45% / 45% 40% 60% 55%; }
+  33%    { border-radius:55% 45% 40% 60% / 60% 55% 45% 40%; }
+  66%    { border-radius:45% 55% 60% 40% / 55% 60% 40% 45%; }
+}
+@keyframes floatY {
+  0%,100%{ transform:translateY(0); }
+  50%    { transform:translateY(-10px); }
+}
+
+/* misc mobile */
+@media(max-width:768px){
+  .nav-links{ display:none; }
+  .hero-stats{ gap:28px; }
+  .btn-primary,.btn-ghost{ padding:12px 26px; }
+}
+@media(max-width:480px){
+  .hero-stats{ flex-direction:column; gap:20px; }
+  .btn-primary,.btn-ghost{ width:100%; text-align:center; }
+}

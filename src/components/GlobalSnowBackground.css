@@ -1,0 +1,18 @@
+.global-snow {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy-mid) 50%, var(--navy-deep) 100%);
+  background-size: 220% 220%;
+  animation: navyDrift 16s ease-in-out infinite;
+}
+
+@keyframes navyDrift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-snow { animation: none; background-position: 50% 50%; }
+}

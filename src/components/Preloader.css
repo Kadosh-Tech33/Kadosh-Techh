@@ -1,0 +1,50 @@
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy-deep);
+  transition: opacity .5s ease, visibility .5s ease;
+}
+.preloader--exit {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.preloader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.preloader-count {
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 3.4rem;
+  letter-spacing: .06em;
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+}
+
+.preloader-bar {
+  width: 220px;
+  height: 2px;
+  background: rgba(255, 255, 255, .15);
+  overflow: hidden;
+}
+.preloader-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--blue);
+  transition: width .1s linear;
+}
+
+.preloader-label {
+  font-family: var(--font-display);
+  font-size: .8rem;
+  letter-spacing: .3em;
+  color: rgba(255, 255, 255, .45);
+}

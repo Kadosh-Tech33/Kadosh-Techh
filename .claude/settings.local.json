@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "WebSearch",
+      "WebFetch(domain:reactbits.dev)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/DavidHDev/react-bits/main/src/content/Components/ScrollStack/ScrollStack.jsx\" -o /tmp/ScrollStack.jsx.txt)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/DavidHDev/react-bits/main/src/content/Components/ScrollStack/ScrollStack.css\" -o /tmp/ScrollStack.css.txt)",
+      "Bash(pwd; find *)",
+      "Read(//c//**)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p public)",
+      "Bash(cp -r img public/img)",
+      "Bash(mv index.html index.original.html.bak)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(npm ls *)",
+      "Bash(npx playwright *)",
+      "Bash(node check.js)",
+      "Bash(node debug.js)",
+      "Bash(node -e ' *)",
+      "Bash(npm run *)",
+      "Bash(lsof -ti:5173 -sTCP:LISTEN)",
+      "Bash(xargs -r kill)"
+    ]
+  }
+}
