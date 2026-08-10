@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { prefersReducedMotion } from '../lib/smoothScroll.js';
 
 const PROJECTS = [
@@ -33,35 +32,32 @@ export default function Work() {
   const trackRef = useRef(null);
   const cardRefs = useRef([]);
   const [isMobile] = useState(getIsMobile);
-  const pinned = !isMobile && !prefersReducedMotion();
+  const [reduced] = useState(prefersReducedMotion);
+  const pinned = !isMobile && !reduced;
+  const sectionClass = isMobile ? 'work-carousel' : (pinned ? 'work-pin' : 'work-stack');
 
   // Desktop/tablet: pin the section and translate the track horizontally,
   // tied to the page's own vertical scroll — same mechanism as Servicos.
-  // Mobile (or reduced-motion): skip the pin entirely and just reveal the
-  // vertically-stacked cards in a stagger as they scroll into view. Either
-  // way the cards stay real, normal <a> elements — nothing here ever
-  // intercepts pointer events, so clicking through to a project always
-  // works, mid-animation or not.
+  // UNTOUCHED by the mobile carousel below.
+  //
+  // Mobile: no GSAP at all — a plain native `overflow-x:auto` + scroll-snap
+  // carousel (see `.work-carousel` in index.css), touch-driven and fully
+  // decoupled from the page's vertical scroll. Nothing here gates the
+  // cards behind a scroll-trigger reveal either, so there's no risk of one
+  // firing oddly for elements that are laid out horizontally instead of
+  // stacked — they're just visible immediately at their natural opacity.
+  //
+  // Desktop + reduced motion: falls back to `.work-stack`, a plain vertical
+  // list with no scroll-linked hide/reveal — same as before.
   useGSAP(() => {
     const track = trackRef.current;
-    if (!track) return;
+    if (!track || isMobile) return;
 
     // Reduced motion: no pin, no scroll-linked hide/reveal at all — cards
     // just sit at their natural, always-visible opacity. Nothing here may
     // ever leave content gated behind a trigger that respects the user's
     // "please don't animate" preference.
-    if (prefersReducedMotion()) return;
-
-    if (!pinned) {
-      const items = gsap.utils.toArray('.work-item', track);
-      gsap.set(items, { opacity: 0, y: 32 });
-      ScrollTrigger.batch(items, {
-        start: 'top 88%',
-        once: true,
-        onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: 'power3.out' }),
-      });
-      return;
-    }
+    if (reduced) return;
 
     const getScrollDistance = () => Math.max(track.scrollWidth - window.innerWidth + 96, 0);
 
@@ -97,10 +93,10 @@ export default function Work() {
         },
       });
     });
-  }, { scope: sectionRef, dependencies: [pinned] });
+  }, { scope: sectionRef, dependencies: [pinned, isMobile] });
 
   return (
-    <section id="work" className={pinned ? 'work-pin' : 'work-stack'} ref={sectionRef}>
+    <section id="work" className={sectionClass} ref={sectionRef}>
       <div className="work-heading reveal">
         <p className="section-label">Portfólio</p>
         <h2 className="section-title">TRABALHOS<br /><em>SELECIONADOS</em></h2>

@@ -404,6 +404,32 @@ nav {
   padding: 100px 24px 80px;
   background: transparent; color: var(--white);
 }
+/* Mobile only (see Work.jsx — rendered instead of .work-pin/.work-stack
+   whenever the `(max-width: 768px)` check matches, regardless of
+   reduced-motion): a plain native horizontal scroller, no GSAP pin/scrub
+   at all, so page-scroll and carousel-scroll stay fully independent. Cards
+   keep their default `.work-item` width (`min(78vw,380px)`) — combined
+   with the track's side padding below, that's what leaves the next card
+   peeking in from the right edge as an affordance. */
+.work-carousel {
+  position: relative; z-index: 12;
+  padding: 100px 0 80px;
+  background: transparent; color: var(--white);
+}
+.work-carousel .work-heading { padding: 0 24px; margin: 0 auto 32px; }
+.work-carousel .work-track {
+  display: flex; gap: 18px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  padding: 0 24px 14px; width: 100%;
+  /* Scrollbar hidden for a cleaner, minimal look — the snap + peeking
+     next card already signal "swipe for more", a visible scrollbar track
+     would just add clutter on top of that. */
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.work-carousel .work-track::-webkit-scrollbar { display: none; }
+.work-carousel .work-item { scroll-snap-align: center; }
+
 .work-heading { padding: 0 24px; max-width: 1080px; margin: 0 auto; width: 100%; }
 .work-stack .work-heading { padding: 0; margin: 0 auto 40px; }
 .work-heading .section-title, .work-heading .section-label { color: var(--white); }

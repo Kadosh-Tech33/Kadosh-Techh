@@ -50,7 +50,8 @@
       "Bash(node reduced-motion-sweep.js)",
       "Bash(node no-pref-sweep.js)",
       "Bash(node cue-flash-diag.js)",
-      "Bash(node cue-verify.js)"
+      "Bash(node cue-verify.js)",
+      "Bash(node work-carousel-test.js)"
     ]
   }
 }
