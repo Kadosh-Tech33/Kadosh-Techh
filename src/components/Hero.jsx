@@ -50,9 +50,16 @@ const HYPERSPEED_OPTIONS_MOBILE = {
   carLightsFade: 0.6,
 };
 
+// Device-capability tier only — NOT an accessibility signal. 'static' here
+// means "too weak for WebGL" (low-end mobile), which is an orthogonal
+// concern from prefers-reduced-motion: a reduced-motion user on a capable
+// desktop still gets the full Hyperspeed scene, just without the
+// scroll-driven pin/warp (see the `reduced` check below). Conflating the
+// two used to mean every reduced-motion visitor — including iPhones in Low
+// Power Mode, which set this automatically — saw a flat gradient instead of
+// the road at all.
 function getDeviceTier() {
   if (typeof window === 'undefined') return 'desktop';
-  if (prefersReducedMotion()) return 'static';
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
   const lowEnd = navigator.hardwareConcurrency ? navigator.hardwareConcurrency <= 4 : false;
   if (isMobile && lowEnd) return 'static';
@@ -71,6 +78,7 @@ export default function Hero({ onReady, onPastChange }) {
   const scrollCueRef = useRef(null);
   const hyperspeedRef = useRef(null);
   const [tier] = useState(getDeviceTier);
+  const [reduced] = useState(prefersReducedMotion);
   const [inView, setInView] = useState(true);
 
   const effectOptions = useMemo(
@@ -95,17 +103,33 @@ export default function Hero({ onReady, onPastChange }) {
     // viewport of scroll room, "entirely past" lags a full viewport height
     // behind the moment the pin actually releases — that gap is what
     // rendered as a stretch of flat, dot-less navy at the top of Stats.
-    // `onLeave` fires exactly when the pin ends (and, for the static tier
-    // below, exactly when the plain in-flow Hero scrolls past the
-    // viewport), so the canvas gets mounted (still hidden behind Hero's own
-    // opaque background) with time to spin up before it's actually visible.
-    if (tier === 'static') {
+    // `onLeave` fires exactly when the pin ends (and, for the branch below,
+    // exactly when the plain in-flow Hero scrolls past the viewport), so
+    // the canvas gets mounted (still hidden behind Hero's own opaque
+    // background) with time to spin up before it's actually visible.
+    //
+    // Reduced motion shares this branch with the low-end-device tier: no
+    // pin, no scroll-driven speed-up/FOV warp, no exit-fade tween on
+    // contentRef/canvasWrapRef below — Hero just behaves like any other
+    // in-flow section and scrolls away naturally. Hyperspeed itself (when
+    // it's mounted — see the render below, gated on `tier` alone, not on
+    // `reduced`) keeps running at its shader's own constant idle rate
+    // regardless: `speedUpTarget` only ever moves away from 0 via the warp
+    // tween created further down, which this branch never reaches, so the
+    // scene reads as a steady, non-accelerating road instead of vanishing.
+    if (tier === 'static' || reduced) {
       ScrollTrigger.create({
         trigger: heroRef.current,
         start: 'top top',
         end: 'bottom top',
-        onLeave: () => onPastChange?.(true),
-        onEnterBack: () => onPastChange?.(false),
+        onLeave: () => {
+          setInView(false);
+          onPastChange?.(true);
+        },
+        onEnterBack: () => {
+          setInView(true);
+          onPastChange?.(false);
+        },
       });
       return;
     }
@@ -128,6 +152,21 @@ export default function Hero({ onReady, onPastChange }) {
           setInView(true);
           onPastChange?.(false);
         },
+        // Guards the scroll-cue fade below: ScrollTrigger.refresh() (fired
+        // on mount, on font/image load, and again once the preloader hands
+        // off) has to briefly un-pin and remeasure this trigger, and can
+        // render this scrub timeline at a transient, inaccurate progress
+        // while doing so — which, without this guard, was enough to run
+        // the scroll-cue's opacity:0 tween to completion and leave it
+        // stuck invisible with the page still sitting at scrollY 0 and the
+        // user never having scrolled at all. Real `window.scrollY` is a
+        // native browser value, untouched by ScrollTrigger's internal
+        // recalculation, so gating on it directly sidesteps the glitch.
+        onUpdate: (self) => {
+          if (!scrollCueRef.current) return;
+          const opacity = window.scrollY > 0 ? Math.max(0, 1 - self.progress * 5) : 1;
+          gsap.set(scrollCueRef.current, { opacity });
+        },
       },
     });
 
@@ -144,11 +183,6 @@ export default function Hero({ onReady, onPastChange }) {
         hyperspeedRef.current?.setFovTarget(hyperState.fov);
       },
     }, 0)
-      .to(scrollCueRef.current, {
-        opacity: 0,
-        duration: 0.2,
-        ease: 'power1.in',
-      }, 0)
       .to(contentRef.current, {
         opacity: 0,
         scale: 0.86,
@@ -170,7 +204,7 @@ export default function Hero({ onReady, onPastChange }) {
     // would be wrong in a multi-section app: it would also tear down
     // every OTHER already-mounted section's ScrollTriggers whenever this
     // one effect re-runs (e.g. React StrictMode's mount→cleanup→mount).
-  }, { scope: heroRef, dependencies: [tier] });
+  }, { scope: heroRef, dependencies: [tier, reduced] });
 
   useGSAP(() => {
     // Entrance reveal, driven by GSAP (inline styles) rather than a CSS

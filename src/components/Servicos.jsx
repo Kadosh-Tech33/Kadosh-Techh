@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import { prefersReducedMotion } from '../lib/smoothScroll.js';
@@ -83,12 +83,11 @@ export default function Servicos() {
   const sectionRef = useRef(null);
   const trackRef = useRef(null);
   const cardRefs = useRef([]);
+  const [reduced] = useState(prefersReducedMotion);
 
   useGSAP(() => {
     const track = trackRef.current;
-    if (!track) return;
-
-    if (prefersReducedMotion()) return;
+    if (!track || reduced) return;
 
     const getScrollDistance = () => Math.max(track.scrollWidth - window.innerWidth + 96, 0);
 
@@ -128,7 +127,7 @@ export default function Servicos() {
   }, { scope: sectionRef });
 
   return (
-    <section id="servicos" className="servicos-pin" ref={sectionRef}>
+    <section id="servicos" className={reduced ? 'servicos-stack' : 'servicos-pin'} ref={sectionRef}>
       <div className="servicos-heading reveal">
         <p className="section-label">O que fazemos</p>
         <h2 className="section-title">NOSSOS<br /><em>SERVIÇOS</em></h2>

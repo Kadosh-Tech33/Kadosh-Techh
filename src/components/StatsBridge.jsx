@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
+import { prefersReducedMotion } from '../lib/smoothScroll.js';
 
 const STATS = [
   { value: 50, suffix: '+', label: 'Projetos Entregues' },
@@ -13,6 +14,18 @@ export default function StatsBridge() {
   const numRefs = useRef([]);
 
   useGSAP(() => {
+    // Reduced motion: show the real numbers immediately instead of
+    // animating a count-up from 0 — no ScrollTrigger dependency, so
+    // there's no scroll-timing edge case that could ever leave a stat
+    // sitting at "0".
+    if (prefersReducedMotion()) {
+      STATS.forEach((stat, i) => {
+        const el = numRefs.current[i];
+        if (el) el.textContent = stat.value;
+      });
+      return;
+    }
+
     STATS.forEach((stat, i) => {
       const el = numRefs.current[i];
       if (!el) return;

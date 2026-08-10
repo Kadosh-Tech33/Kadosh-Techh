@@ -44,7 +44,13 @@
       "Bash(node check-new-card.js)",
       "Bash(python3 -c ' *)",
       "Bash(node check-crop.js)",
-      "Bash(node check-crop2.js)"
+      "Bash(node check-crop2.js)",
+      "Bash(npm run *)",
+      "Bash(netstat -ano)",
+      "Bash(node reduced-motion-sweep.js)",
+      "Bash(node no-pref-sweep.js)",
+      "Bash(node cue-flash-diag.js)",
+      "Bash(node cue-verify.js)"
     ]
   }
 }
